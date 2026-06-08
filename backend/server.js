@@ -10,7 +10,7 @@ const morgan = require('morgan');
 require('dotenv').config();
 
 // Initialise the DB pool (also runs a connection test on startup)
-require('./config/db');
+const pool = require('./config/db');
 
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
@@ -30,6 +30,19 @@ app.get('/', (req, res) => {
     status: 'running',
     docs: 'See README.md for the full list of endpoints.',
   });
+});
+
+// --- Database keep-alive / health check ---
+// Runs a trivial query so that pinging this route (e.g. from an uptime
+// monitor every ~10 minutes) keeps BOTH the API host and the managed
+// database awake on free hosting tiers that sleep when idle.
+app.get('/health/db', async (req, res) => {
+  try {
+    await pool.query('SELECT 1');
+    res.json({ status: 'ok', database: 'connected' });
+  } catch (err) {
+    res.status(503).json({ status: 'error', database: 'unavailable' });
+  }
 });
 
 // --- API routes ---
