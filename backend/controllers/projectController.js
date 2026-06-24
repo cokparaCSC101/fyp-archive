@@ -1,16 +1,19 @@
 // =====================================================================
 //  Project controller
-//  - getProjects   : paginated list, supports ?keyword= and ?year= filters
-//  - getProjectById: single project with supervisor details
-//  - createProject : admin only
-//  - updateProject : admin only
-//  - deleteProject : admin only
+//  Read (any authenticated user):
+//    - getProjects    : paginated list, ?keyword= and ?year= filters
+//    - getProjectById : single project with supervisor details
+//
+//  Write (role-aware; route restricts to admin/hod/lecturer):
+//    - admin / hod : the action is applied to the archive immediately.
+//    - lecturer    : the action is saved to project_requests as a
+//                    PENDING request for the HoD to approve or deny.
 //
 //  Every query is parameterised to prevent SQL injection.
 // =====================================================================
 const pool = require('../config/db');
+const { logAudit } = require('../utils/audit');
 
-// Reusable SELECT that joins the supervisor name onto each project row.
 const PROJECT_SELECT = `
   SELECT
     p.project_id,
@@ -19,6 +22,7 @@ const PROJECT_SELECT = `
     p.year_completed,
     p.abstract,
     p.project_link,
+    p.project_webapp_link,
     p.supervisor_id,
     s.full_name AS supervisor_name,
     s.department AS supervisor_department,
@@ -27,6 +31,8 @@ const PROJECT_SELECT = `
   FROM projects p
   JOIN supervisors s ON p.supervisor_id = s.supervisor_id
 `;
+
+const canActDirectly = (role) => role === 'admin' || role === 'hod';
 
 // GET /api/projects?page=1&limit=9&keyword=...&year=...
 const getProjects = async (req, res) => {
@@ -38,10 +44,8 @@ const getProjects = async (req, res) => {
     const keyword = (req.query.keyword || '').trim();
     const year = (req.query.year || '').trim();
 
-    // Build WHERE clause dynamically but safely with placeholders.
     const where = [];
     const params = [];
-
     if (keyword) {
       where.push('(p.title LIKE ? OR p.student_name LIKE ? OR p.abstract LIKE ?)');
       const like = `%${keyword}%`;
@@ -51,17 +55,14 @@ const getProjects = async (req, res) => {
       where.push('p.year_completed = ?');
       params.push(parseInt(year, 10));
     }
-
     const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-    // Total count for pagination metadata
     const [countRows] = await pool.query(
       `SELECT COUNT(*) AS total FROM projects p ${whereClause}`,
       params
     );
     const total = countRows[0].total;
 
-    // Page of results (newest first)
     const [rows] = await pool.query(
       `${PROJECT_SELECT} ${whereClause} ORDER BY p.year_completed DESC, p.created_at DESC LIMIT ? OFFSET ?`,
       [...params, limit, offset]
@@ -69,12 +70,7 @@ const getProjects = async (req, res) => {
 
     return res.json({
       data: rows,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit) || 1,
-      },
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) || 1 },
     });
   } catch (err) {
     console.error('getProjects error:', err);
@@ -85,9 +81,7 @@ const getProjects = async (req, res) => {
 // GET /api/projects/:id
 const getProjectById = async (req, res) => {
   try {
-    const [rows] = await pool.query(`${PROJECT_SELECT} WHERE p.project_id = ?`, [
-      req.params.id,
-    ]);
+    const [rows] = await pool.query(`${PROJECT_SELECT} WHERE p.project_id = ?`, [req.params.id]);
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Project not found.' });
     }
@@ -111,40 +105,48 @@ const validateProjectBody = (body) => {
   return null;
 };
 
-// POST /api/projects   (admin only)
+const fields = (b) => ({
+  title: b.title,
+  student_name: b.student_name,
+  year_completed: parseInt(b.year_completed, 10),
+  abstract: b.abstract,
+  project_link: b.project_link || null,
+  project_webapp_link: b.project_webapp_link || null,
+  supervisor_id: b.supervisor_id,
+});
+
+// POST /api/projects   (admin/hod -> immediate; lecturer -> pending request)
 const createProject = async (req, res) => {
   try {
     const error = validateProjectBody(req.body);
     if (error) return res.status(400).json({ message: error });
+    const f = fields(req.body);
 
-    const {
-      title,
-      student_name,
-      year_completed,
-      abstract,
-      project_link,
-      supervisor_id,
-    } = req.body;
+    if (canActDirectly(req.user.role)) {
+      const [result] = await pool.query(
+        `INSERT INTO projects
+           (title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, added_by)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, req.user.user_id]
+      );
+      await logAudit({ user_id: req.user.user_id, action: 'create_project', project_id: result.insertId, details: f.title });
+      const [rows] = await pool.query(`${PROJECT_SELECT} WHERE p.project_id = ?`, [result.insertId]);
+      return res.status(201).json({ message: 'Project added successfully.', project: rows[0] });
+    }
 
-    const [result] = await pool.query(
-      `INSERT INTO projects
-        (title, student_name, year_completed, abstract, project_link, supervisor_id, added_by)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        title,
-        student_name,
-        parseInt(year_completed, 10),
-        abstract,
-        project_link || null,
-        supervisor_id,
-        req.user.user_id, // taken from the JWT, not the client body
-      ]
+    // lecturer -> queue a create request
+    const [r] = await pool.query(
+      `INSERT INTO project_requests
+         (action, title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, requested_by)
+       VALUES ('create', ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, req.user.user_id]
     );
-
-    const [rows] = await pool.query(`${PROJECT_SELECT} WHERE p.project_id = ?`, [
-      result.insertId,
-    ]);
-    return res.status(201).json({ message: 'Project added successfully.', project: rows[0] });
+    await logAudit({ user_id: req.user.user_id, action: 'request_create', details: f.title });
+    return res.status(202).json({
+      message: 'Your project has been submitted to the HoD for approval.',
+      pending: true,
+      request_id: r.insertId,
+    });
   } catch (err) {
     console.error('createProject error:', err);
     if (err.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -154,45 +156,44 @@ const createProject = async (req, res) => {
   }
 };
 
-// PUT /api/projects/:id   (admin only)
+// PUT /api/projects/:id   (admin/hod -> immediate; lecturer -> pending request)
 const updateProject = async (req, res) => {
   try {
     const error = validateProjectBody(req.body);
     if (error) return res.status(400).json({ message: error });
+    const f = fields(req.body);
+    const id = req.params.id;
 
-    const {
-      title,
-      student_name,
-      year_completed,
-      abstract,
-      project_link,
-      supervisor_id,
-    } = req.body;
-
-    const [result] = await pool.query(
-      `UPDATE projects SET
-         title = ?, student_name = ?, year_completed = ?, abstract = ?,
-         project_link = ?, supervisor_id = ?
-       WHERE project_id = ?`,
-      [
-        title,
-        student_name,
-        parseInt(year_completed, 10),
-        abstract,
-        project_link || null,
-        supervisor_id,
-        req.params.id,
-      ]
-    );
-
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Project not found.' });
+    if (canActDirectly(req.user.role)) {
+      const [result] = await pool.query(
+        `UPDATE projects SET
+           title = ?, student_name = ?, year_completed = ?, abstract = ?,
+           project_link = ?, project_webapp_link = ?, supervisor_id = ?
+         WHERE project_id = ?`,
+        [f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, id]
+      );
+      if (result.affectedRows === 0) return res.status(404).json({ message: 'Project not found.' });
+      await logAudit({ user_id: req.user.user_id, action: 'update_project', project_id: id, details: f.title });
+      const [rows] = await pool.query(`${PROJECT_SELECT} WHERE p.project_id = ?`, [id]);
+      return res.json({ message: 'Project updated successfully.', project: rows[0] });
     }
 
-    const [rows] = await pool.query(`${PROJECT_SELECT} WHERE p.project_id = ?`, [
-      req.params.id,
-    ]);
-    return res.json({ message: 'Project updated successfully.', project: rows[0] });
+    // lecturer -> queue an update request (confirm the target exists first)
+    const [exists] = await pool.query('SELECT project_id FROM projects WHERE project_id = ?', [id]);
+    if (exists.length === 0) return res.status(404).json({ message: 'Project not found.' });
+
+    const [r] = await pool.query(
+      `INSERT INTO project_requests
+         (action, target_project_id, title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, requested_by)
+       VALUES ('update', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, req.user.user_id]
+    );
+    await logAudit({ user_id: req.user.user_id, action: 'request_update', project_id: id, details: f.title });
+    return res.status(202).json({
+      message: 'Your edit has been submitted to the HoD for approval.',
+      pending: true,
+      request_id: r.insertId,
+    });
   } catch (err) {
     console.error('updateProject error:', err);
     if (err.code === 'ER_NO_REFERENCED_ROW_2') {
@@ -202,26 +203,37 @@ const updateProject = async (req, res) => {
   }
 };
 
-// DELETE /api/projects/:id   (admin only)
+// DELETE /api/projects/:id   (admin/hod -> immediate; lecturer -> pending request)
 const deleteProject = async (req, res) => {
   try {
-    const [result] = await pool.query('DELETE FROM projects WHERE project_id = ?', [
-      req.params.id,
-    ]);
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ message: 'Project not found.' });
+    const id = req.params.id;
+
+    if (canActDirectly(req.user.role)) {
+      const [result] = await pool.query('DELETE FROM projects WHERE project_id = ?', [id]);
+      if (result.affectedRows === 0) return res.status(404).json({ message: 'Project not found.' });
+      await logAudit({ user_id: req.user.user_id, action: 'delete_project', project_id: null, details: `project ${id}` });
+      return res.json({ message: 'Project deleted successfully.' });
     }
-    return res.json({ message: 'Project deleted successfully.' });
+
+    // lecturer -> queue a delete request
+    const [rows] = await pool.query('SELECT project_id, title FROM projects WHERE project_id = ?', [id]);
+    if (rows.length === 0) return res.status(404).json({ message: 'Project not found.' });
+
+    const [r] = await pool.query(
+      `INSERT INTO project_requests (action, target_project_id, title, requested_by)
+       VALUES ('delete', ?, ?, ?)`,
+      [id, rows[0].title, req.user.user_id]
+    );
+    await logAudit({ user_id: req.user.user_id, action: 'request_delete', project_id: id, details: rows[0].title });
+    return res.status(202).json({
+      message: 'Your delete request has been submitted to the HoD for approval.',
+      pending: true,
+      request_id: r.insertId,
+    });
   } catch (err) {
     console.error('deleteProject error:', err);
     return res.status(500).json({ message: 'Server error while deleting the project.' });
   }
 };
 
-module.exports = {
-  getProjects,
-  getProjectById,
-  createProject,
-  updateProject,
-  deleteProject,
-};
+module.exports = { getProjects, getProjectById, createProject, updateProject, deleteProject };

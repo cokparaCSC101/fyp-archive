@@ -15,6 +15,7 @@ const pool = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const supervisorRoutes = require('./routes/supervisorRoutes');
+const requestRoutes = require('./routes/requestRoutes');
 
 const app = express();
 
@@ -49,6 +50,7 @@ app.get('/health/db', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/supervisors', supervisorRoutes);
+app.use('/api/requests', requestRoutes);
 
 // --- 404 fallback ---
 app.use((req, res) => {
