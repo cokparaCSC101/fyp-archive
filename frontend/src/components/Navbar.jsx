@@ -10,7 +10,7 @@ const ROLE_LABELS = {
 };
 
 export default function Navbar() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, isStaff, canApprove, isLecturer, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -30,23 +30,17 @@ export default function Navbar() {
         </NavLink>
 
         <div className="nav-links">
-          <NavLink to="/" end className="nav-link">
-            Browse
-          </NavLink>
-          {isAdmin && (
-            <NavLink to="/admin" className="nav-link">
-              Manage
-            </NavLink>
-          )}
+          <NavLink to="/" end className="nav-link">Browse</NavLink>
+          {isStaff && <NavLink to="/admin" className="nav-link">Manage</NavLink>}
+          {canApprove && <NavLink to="/approvals" className="nav-link">Approvals</NavLink>}
+          {isLecturer && <NavLink to="/my-requests" className="nav-link">My Requests</NavLink>}
 
           <div className="nav-user">
             <span className="brand-text">
               <span className="nav-user-name">{user?.full_name}</span>
               <span className="nav-user-role">{ROLE_LABELS[user?.role] || user?.role}</span>
             </span>
-            <button className="btn btn-ghost btn-sm" onClick={handleLogout}>
-              Sign out
-            </button>
+            <button className="btn btn-ghost btn-sm" onClick={handleLogout}>Sign out</button>
           </div>
         </div>
       </div>

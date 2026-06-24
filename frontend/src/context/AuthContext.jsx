@@ -53,10 +53,16 @@ export function AuthProvider({ children }) {
     setUser(null);
   }, []);
 
+  const role = user?.role || null;
   const value = {
     user,
+    role,
     isAuthenticated: !!user,
-    isAdmin: user?.role === 'admin',
+    isAdmin: role === 'admin',
+    isHod: role === 'hod',
+    isLecturer: role === 'lecturer',
+    isStaff: role === 'admin' || role === 'hod' || role === 'lecturer',
+    canApprove: role === 'admin' || role === 'hod',
     login,
     register,
     verifyEmail,

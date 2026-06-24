@@ -553,3 +553,27 @@ table.data tbody tr:hover { background: rgba(243, 232, 212, 0.4); }
   text-decoration: underline;
 }
 .link-button:disabled { opacity: .6; cursor: default; }
+
+/* ---- role workflow: status pills, request cards, filters ---- */
+.pill { display:inline-block; padding:3px 10px; border-radius:999px; font-size:.7rem; font-weight:700; letter-spacing:.03em; text-transform:uppercase; }
+.pill-pending  { background: var(--gold-wash);  color: var(--gold-deep); }
+.pill-approved { background:#e4efe1;            color: var(--teal); }
+.pill-denied   { background: var(--danger-wash); color: var(--danger); }
+.pill-create   { background:#e4efe1;            color: var(--teal); }
+.pill-update   { background: var(--gold-wash);  color: var(--gold-deep); }
+.pill-delete   { background: var(--danger-wash); color: var(--danger); }
+
+.req-list { display:flex; flex-direction:column; gap:16px; }
+.req-card { background: var(--surface); border:1px solid var(--surface-edge); border-radius: var(--radius); padding:18px 20px; box-shadow: var(--shadow-sm); }
+.req-card-head { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+.req-card-head h3 { font-family: var(--font-display); font-size:1.12rem; margin:0; flex:1 1 auto; line-height:1.25; }
+.req-meta { color: var(--ink-faint); font-size:.84rem; margin-bottom:10px; }
+.req-fields { color: var(--ink-soft); font-size:.92rem; line-height:1.55; }
+.req-fields .lbl { color: var(--ink-faint); }
+.req-fields a { color: var(--gold-deep); }
+.req-actions { display:flex; gap:10px; margin-top:14px; }
+.req-note { margin-top:10px; padding:10px 12px; background: var(--danger-wash); color: var(--danger); border-radius: var(--radius-sm); font-size:.88rem; }
+.filter-row { display:flex; gap:8px; margin-bottom:22px; flex-wrap:wrap; }
+.filter-chip { padding:6px 14px; border-radius:999px; border:1px solid var(--surface-edge); background:transparent; cursor:pointer; font-size:.85rem; font-weight:600; color: var(--ink-soft); }
+.filter-chip.active { background: var(--ink); color:#fff; border-color: var(--ink); }
+.form-hint { background: var(--gold-wash); color: var(--gold-deep); border-radius: var(--radius-sm); padding:10px 12px; font-size:.88rem; margin-bottom:16px; }

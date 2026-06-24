@@ -9,13 +9,16 @@ import VerifyEmail from './pages/VerifyEmail';
 import Browse from './pages/Browse';
 import ProjectDetail from './pages/ProjectDetail';
 import AdminDashboard from './pages/AdminDashboard';
+import Approvals from './pages/Approvals';
+import MyRequests from './pages/MyRequests';
 import NotFound from './pages/NotFound';
 
-// Layout chrome (navbar + footer) is hidden on the auth pages.
+const STAFF = ['admin', 'hod', 'lecturer'];
+const APPROVERS = ['admin', 'hod'];
+
 function Layout({ children }) {
   const location = useLocation();
   const isAuthPage = ['/login', '/register', '/verify'].includes(location.pathname);
-
   return (
     <>
       {!isAuthPage && <Navbar />}
@@ -37,38 +40,19 @@ export default function App() {
       <BrowserRouter>
         <Layout>
           <Routes>
-            {/* Public auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify" element={<VerifyEmail />} />
 
-            {/* Authenticated (read) routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Browse />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/projects/:id"
-              element={
-                <ProtectedRoute>
-                  <ProjectDetail />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/" element={<ProtectedRoute><Browse /></ProtectedRoute>} />
+            <Route path="/projects/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
 
-            {/* Admin-only route */}
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute adminOnly>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
+            {/* Staff: manage the archive (lecturer actions become requests) */}
+            <Route path="/admin" element={<ProtectedRoute roles={STAFF}><AdminDashboard /></ProtectedRoute>} />
+            {/* Approvers: review the request queue */}
+            <Route path="/approvals" element={<ProtectedRoute roles={APPROVERS}><Approvals /></ProtectedRoute>} />
+            {/* Staff: track your own submitted requests */}
+            <Route path="/my-requests" element={<ProtectedRoute roles={STAFF}><MyRequests /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
