@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import Browse from './pages/Browse';
 import ProjectDetail from './pages/ProjectDetail';
 import AdminDashboard from './pages/AdminDashboard';
@@ -13,7 +14,7 @@ import NotFound from './pages/NotFound';
 // Layout chrome (navbar + footer) is hidden on the auth pages.
 function Layout({ children }) {
   const location = useLocation();
-  const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  const isAuthPage = ['/login', '/register', '/verify'].includes(location.pathname);
 
   return (
     <>
@@ -39,6 +40,7 @@ export default function App() {
             {/* Public auth routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/verify" element={<VerifyEmail />} />
 
             {/* Authenticated (read) routes */}
             <Route

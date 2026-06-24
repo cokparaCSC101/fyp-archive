@@ -540,3 +540,16 @@ table.data tbody tr:hover { background: rgba(243, 232, 212, 0.4); }
   .table-wrap { overflow-x: auto; }
   table.data { min-width: 640px; }
 }
+
+/* inline link-style button (e.g. "Resend code") */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: var(--gold-deep);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.link-button:disabled { opacity: .6; cursor: default; }

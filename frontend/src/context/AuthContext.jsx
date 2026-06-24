@@ -1,7 +1,10 @@
 // =====================================================================
 //  AuthContext
-//  Holds the current user + token, exposes login / register / logout,
-//  and persists the session in localStorage so a refresh keeps you in.
+//  Holds the current user + token, exposes login / register / verify /
+//  resend / logout, and persists the session in localStorage.
+//
+//  Note: register() no longer signs the user in. New accounts must
+//  verify their email with a 6-digit code first (verifyEmail()).
 // =====================================================================
 import { createContext, useContext, useState, useCallback } from 'react';
 import api from '../api/client';
@@ -9,7 +12,6 @@ import api from '../api/client';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  // Initialise from localStorage so refreshing the page keeps the session.
   const [user, setUser] = useState(() => {
     const stored = localStorage.getItem('fyp_user');
     return stored ? JSON.parse(stored) : null;
@@ -27,10 +29,22 @@ export function AuthProvider({ children }) {
     return data.user;
   }, []);
 
+  // Creates the account and triggers the email code. Does NOT sign in.
   const register = useCallback(async (payload) => {
     const { data } = await api.post('/auth/register', payload);
+    return data; // { requiresVerification, email, message }
+  }, []);
+
+  // Confirms the emailed code, then signs the user in.
+  const verifyEmail = useCallback(async (email, code) => {
+    const { data } = await api.post('/auth/verify-email', { email, code });
     persist(data.token, data.user);
     return data.user;
+  }, []);
+
+  const resendCode = useCallback(async (email) => {
+    const { data } = await api.post('/auth/resend-code', { email });
+    return data;
   }, []);
 
   const logout = useCallback(() => {
@@ -45,13 +59,14 @@ export function AuthProvider({ children }) {
     isAdmin: user?.role === 'admin',
     login,
     register,
+    verifyEmail,
+    resendCode,
     logout,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Convenience hook
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used within an AuthProvider');

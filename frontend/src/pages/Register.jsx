@@ -24,8 +24,8 @@ export default function Register() {
     setError('');
     setLoading(true);
     try {
-      await register(form);
-      navigate('/', { replace: true });
+      await register({ ...form, email: form.email.trim() });
+      navigate('/verify', { state: { email: form.email.trim() } });
     } catch (err) {
       setError(err.response?.data?.message || 'Unable to register. Please try again.');
     } finally {

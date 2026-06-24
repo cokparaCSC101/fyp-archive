@@ -22,6 +22,10 @@ export default function Login() {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
+      if (err.response?.status === 403 && err.response?.data?.requiresVerification) {
+        navigate('/verify', { state: { email: email.trim() } });
+        return;
+      }
       setError(err.response?.data?.message || 'Unable to sign in. Please try again.');
     } finally {
       setLoading(false);
