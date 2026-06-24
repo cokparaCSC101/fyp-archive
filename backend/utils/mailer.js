@@ -7,6 +7,11 @@
 // =====================================================================
 const nodemailer = require('nodemailer');
 
+// Prefer IPv4. Some hosts (e.g. Render) have no IPv6 route, so when
+// smtp.gmail.com resolves to an IPv6 address the connection fails with
+// ENETUNREACH. Resolving IPv4 first avoids that.
+try { require('dns').setDefaultResultOrder('ipv4first'); } catch (_) { /* older Node */ }
+
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
 const hasCreds = !!(EMAIL_USER && EMAIL_PASS);
@@ -14,16 +19,21 @@ const hasCreds = !!(EMAIL_USER && EMAIL_PASS);
 let transporter = null;
 if (hasCreds) {
   transporter = nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,            // STARTTLS submission port (more firewall-friendly than 465)
+    secure: false,        // upgraded to TLS via STARTTLS
+    requireTLS: true,
     auth: { user: EMAIL_USER, pass: EMAIL_PASS },
+    // Fail fast instead of hanging for ~2 minutes on a blocked connection.
+    connectionTimeout: 15000,
+    greetingTimeout: 10000,
+    socketTimeout: 20000,
   });
 }
 
 const APP_NAME = 'FYP Archive — Pan-Atlantic University';
 
 async function sendVerificationEmail(to, fullName, code) {
-  // Development fallback: no email configured. Log the code so the
-  // verification flow can still be completed and tested locally.
   if (!transporter) {
     console.log(
       `\n──────────────────────────────────────────────\n` +

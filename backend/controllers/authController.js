@@ -62,11 +62,16 @@ const register = async (req, res) => {
           'UPDATE users SET verification_code = ?, verification_expires = ? WHERE user_id = ?',
           [code, newExpiry(), existing[0].user_id]
         );
-        await sendVerificationEmail(email, full_name, code);
+        let resent = true;
+        try { await sendVerificationEmail(email, full_name, code); }
+        catch (e) { resent = false; console.error('verification email failed:', e.message); }
         return res.status(200).json({
-          message: 'This email is already registered but not verified. We have sent a new code.',
+          message: resent
+            ? 'This email is already registered but not verified. We have sent a new code.'
+            : 'This email is already registered but not verified. Use \u201cResend code\u201d to try again.',
           requiresVerification: true,
           email,
+          emailSent: resent,
         });
       }
       return res.status(409).json({ message: 'An account with this email already exists.' });
@@ -80,12 +85,21 @@ const register = async (req, res) => {
       [full_name, email, password_hash, role, code, newExpiry()]
     );
 
-    await sendVerificationEmail(email, full_name, code);
+    let emailSent = true;
+    try {
+      await sendVerificationEmail(email, full_name, code);
+    } catch (e) {
+      emailSent = false;
+      console.error('verification email failed:', e.message);
+    }
 
     return res.status(201).json({
-      message: 'Account created. Check your email for a 6-digit verification code.',
+      message: emailSent
+        ? 'Account created. Check your email for a 6-digit verification code.'
+        : 'Account created, but we could not send the code right now. Use \u201cResend code\u201d on the next screen.',
       requiresVerification: true,
       email,
+      emailSent,
     });
   } catch (err) {
     console.error('register error:', err);
@@ -151,7 +165,8 @@ const resendCode = async (req, res) => {
         'UPDATE users SET verification_code = ?, verification_expires = ? WHERE user_id = ?',
         [code, newExpiry(), rows[0].user_id]
       );
-      await sendVerificationEmail(email, rows[0].full_name, code);
+      try { await sendVerificationEmail(email, rows[0].full_name, code); }
+      catch (e) { console.error('verification email failed:', e.message); }
     }
     return res.json({ message: 'If that account exists and is unverified, a new code has been sent.' });
   } catch (err) {
@@ -187,9 +202,10 @@ const login = async (req, res) => {
         'UPDATE users SET verification_code = ?, verification_expires = ? WHERE user_id = ?',
         [code, newExpiry(), row.user_id]
       );
-      await sendVerificationEmail(email, row.full_name, code);
+      try { await sendVerificationEmail(email, row.full_name, code); }
+      catch (e) { console.error('verification email failed:', e.message); }
       return res.status(403).json({
-        message: 'Your email is not verified yet. We have emailed you a new code.',
+        message: 'Your email is not verified yet. Please verify with the code we emailed you (use \u201cResend code\u201d if needed).',
         requiresVerification: true,
         email,
       });
