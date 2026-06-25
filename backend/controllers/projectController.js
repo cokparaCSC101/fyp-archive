@@ -13,6 +13,7 @@
 // =====================================================================
 const pool = require('../config/db');
 const { logAudit } = require('../utils/audit');
+const { compareProject } = require('../utils/similarity');
 
 const PROJECT_SELECT = `
   SELECT
@@ -134,12 +135,14 @@ const createProject = async (req, res) => {
       return res.status(201).json({ message: 'Project added successfully.', project: rows[0] });
     }
 
-    // lecturer -> queue a create request
+    // lecturer -> queue a create request (with a similarity check vs the archive)
+    const [allProj] = await pool.query('SELECT project_id, title, abstract FROM projects');
+    const sim = compareProject({ title: f.title, abstract: f.abstract }, allProj);
     const [r] = await pool.query(
       `INSERT INTO project_requests
-         (action, title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, requested_by)
-       VALUES ('create', ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, req.user.user_id]
+         (action, title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, similarity_score, similarity_info, requested_by)
+       VALUES ('create', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, sim.score, JSON.stringify(sim.matches), req.user.user_id]
     );
     await logAudit({ user_id: req.user.user_id, action: 'request_create', details: f.title });
     return res.status(202).json({
@@ -182,11 +185,13 @@ const updateProject = async (req, res) => {
     const [exists] = await pool.query('SELECT project_id FROM projects WHERE project_id = ?', [id]);
     if (exists.length === 0) return res.status(404).json({ message: 'Project not found.' });
 
+    const [allProj] = await pool.query('SELECT project_id, title, abstract FROM projects WHERE project_id <> ?', [id]);
+    const sim = compareProject({ title: f.title, abstract: f.abstract }, allProj);
     const [r] = await pool.query(
       `INSERT INTO project_requests
-         (action, target_project_id, title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, requested_by)
-       VALUES ('update', ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, req.user.user_id]
+         (action, target_project_id, title, student_name, year_completed, abstract, project_link, project_webapp_link, supervisor_id, similarity_score, similarity_info, requested_by)
+       VALUES ('update', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, f.title, f.student_name, f.year_completed, f.abstract, f.project_link, f.project_webapp_link, f.supervisor_id, sim.score, JSON.stringify(sim.matches), req.user.user_id]
     );
     await logAudit({ user_id: req.user.user_id, action: 'request_update', project_id: id, details: f.title });
     return res.status(202).json({

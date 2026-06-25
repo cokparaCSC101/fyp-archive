@@ -12,6 +12,25 @@ function fmtDate(d) {
   catch { return ''; }
 }
 
+// Similarity flag shown on create/edit requests.
+function SimNote({ score, info }) {
+  let matches = [];
+  try { matches = JSON.parse(info || '[]'); } catch { matches = []; }
+  const tone = score >= 60 ? 'high' : score >= 30 ? 'med' : 'low';
+  const label = score >= 60 ? 'High similarity' : score >= 30 ? 'Possible overlap'
+              : (matches.length ? 'Low similarity' : 'No close matches found');
+  return (
+    <div className={`sim sim-${tone}`}>
+      <strong>{label}{matches.length ? ` — ${score}% match` : ''}</strong>
+      {matches.length > 0 && (
+        <ul className="sim-list">
+          {matches.map((m) => (<li key={m.project_id}>{m.score}% · {m.title}</li>))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 export default function Approvals() {
   const [filter, setFilter] = useState('pending');
   const [requests, setRequests] = useState([]);
@@ -124,6 +143,10 @@ export default function Approvals() {
               )}
               {r.action === 'delete' && (
                 <div className="req-fields">Requests removal of <strong>{r.target_title || `project #${r.target_project_id}`}</strong> from the archive.</div>
+              )}
+
+              {r.action !== 'delete' && r.similarity_score != null && (
+                <SimNote score={Number(r.similarity_score)} info={r.similarity_info} />
               )}
 
               {r.status === 'denied' && r.review_note && (

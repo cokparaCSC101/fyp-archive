@@ -577,3 +577,12 @@ table.data tbody tr:hover { background: rgba(243, 232, 212, 0.4); }
 .filter-chip { padding:6px 14px; border-radius:999px; border:1px solid var(--surface-edge); background:transparent; cursor:pointer; font-size:.85rem; font-weight:600; color: var(--ink-soft); }
 .filter-chip.active { background: var(--ink); color:#fff; border-color: var(--ink); }
 .form-hint { background: var(--gold-wash); color: var(--gold-deep); border-radius: var(--radius-sm); padding:10px 12px; font-size:.88rem; margin-bottom:16px; }
+
+/* ---- similarity flag on approval cards ---- */
+.sim { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius-sm); font-size: .86rem; }
+.sim strong { display: block; margin-bottom: 2px; }
+.sim-high { background: var(--danger-wash); color: var(--danger); }
+.sim-med  { background: var(--gold-wash);   color: var(--gold-deep); }
+.sim-low  { background: #edf1ea;            color: var(--ink-soft); }
+.sim-list { margin: 4px 0 0; padding-left: 18px; }
+.sim-list li { margin: 1px 0; }
