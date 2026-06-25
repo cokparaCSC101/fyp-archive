@@ -67,8 +67,6 @@ export default function ProjectForm({ initial, supervisors, onSubmit, onClose, s
               Your submission will be sent to the Head of Department for approval before it appears in the archive.
             </div>
           )}
-          {error && <div className="alert alert-error">{error}</div>}
-
           <form onSubmit={handleSubmit}>
             <div className="field">
               <label>Project Title *</label>
@@ -122,6 +120,7 @@ export default function ProjectForm({ initial, supervisors, onSubmit, onClose, s
               <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
               <button type="submit" className="btn btn-gold" disabled={saving}>{saveLabel}</button>
             </div>
+            {error && <div className="alert alert-error" style={{ marginTop: 14, marginBottom: 0 }}>{error}</div>}
           </form>
         </div>
       </div>
