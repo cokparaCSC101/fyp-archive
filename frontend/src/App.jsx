@@ -11,6 +11,9 @@ import ProjectDetail from './pages/ProjectDetail';
 import AdminDashboard from './pages/AdminDashboard';
 import Approvals from './pages/Approvals';
 import MyRequests from './pages/MyRequests';
+import Feedback from './pages/Feedback';
+import Complaints from './pages/Complaints';
+import AuditLog from './pages/AuditLog';
 import NotFound from './pages/NotFound';
 
 const STAFF = ['admin', 'hod', 'lecturer'];
@@ -53,6 +56,12 @@ export default function App() {
             <Route path="/approvals" element={<ProtectedRoute roles={APPROVERS}><Approvals /></ProtectedRoute>} />
             {/* Staff: track your own submitted requests */}
             <Route path="/my-requests" element={<ProtectedRoute roles={STAFF}><MyRequests /></ProtectedRoute>} />
+
+            {/* Any signed-in user can send feedback */}
+            <Route path="/feedback" element={<ProtectedRoute><Feedback /></ProtectedRoute>} />
+            {/* Admin manages complaints; HoD/admin read the audit log */}
+            <Route path="/complaints" element={<ProtectedRoute roles={['admin']}><Complaints /></ProtectedRoute>} />
+            <Route path="/audit" element={<ProtectedRoute roles={APPROVERS}><AuditLog /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>

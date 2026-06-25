@@ -86,6 +86,7 @@ const getProjectById = async (req, res) => {
     if (rows.length === 0) {
       return res.status(404).json({ message: 'Project not found.' });
     }
+    logAudit({ user_id: req.user.user_id, action: 'view_project', project_id: rows[0].project_id, details: rows[0].title });
     return res.json(rows[0]);
   } catch (err) {
     console.error('getProjectById error:', err);

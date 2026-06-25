@@ -16,6 +16,8 @@ const authRoutes = require('./routes/authRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const supervisorRoutes = require('./routes/supervisorRoutes');
 const requestRoutes = require('./routes/requestRoutes');
+const complaintRoutes = require('./routes/complaintRoutes');
+const auditRoutes = require('./routes/auditRoutes');
 
 const app = express();
 
@@ -51,6 +53,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/supervisors', supervisorRoutes);
 app.use('/api/requests', requestRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/audit', auditRoutes);
 
 // --- 404 fallback ---
 app.use((req, res) => {

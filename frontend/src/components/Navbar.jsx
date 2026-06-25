@@ -10,7 +10,7 @@ const ROLE_LABELS = {
 };
 
 export default function Navbar() {
-  const { user, isStaff, canApprove, isLecturer, logout } = useAuth();
+  const { user, isStaff, canApprove, isLecturer, isAdmin, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -34,6 +34,9 @@ export default function Navbar() {
           {isStaff && <NavLink to="/admin" className="nav-link">Manage</NavLink>}
           {canApprove && <NavLink to="/approvals" className="nav-link">Approvals</NavLink>}
           {isLecturer && <NavLink to="/my-requests" className="nav-link">My Requests</NavLink>}
+          {canApprove && <NavLink to="/audit" className="nav-link">Audit</NavLink>}
+          {isAdmin && <NavLink to="/complaints" className="nav-link">Complaints</NavLink>}
+          <NavLink to="/feedback" className="nav-link">Feedback</NavLink>
 
           <div className="nav-user">
             <span className="brand-text">

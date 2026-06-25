@@ -586,3 +586,16 @@ table.data tbody tr:hover { background: rgba(243, 232, 212, 0.4); }
 .sim-low  { background: #edf1ea;            color: var(--ink-soft); }
 .sim-list { margin: 4px 0 0; padding-left: 18px; }
 .sim-list li { margin: 1px 0; }
+
+/* ---- Phase 5: feedback / complaints / audit ---- */
+.form-card { background: var(--surface); border: 1px solid var(--surface-edge); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm); }
+.section-title { font-family: var(--font-display); font-size: 1.3rem; color: var(--ink); margin: 0 0 16px; }
+.muted { color: var(--ink-faint); }
+.resp-note { margin-top: 10px; padding: 10px 12px; background: var(--gold-wash); color: var(--gold-deep); border-radius: var(--radius-sm); font-size: .9rem; }
+.complaint-controls { display: flex; gap: 16px; margin-top: 14px; align-items: flex-start; flex-wrap: wrap; }
+.complaint-controls .field select { min-width: 150px; }
+
+.pill-open        { background: var(--danger-wash); color: var(--danger); }
+.pill-seen        { background: var(--gold-wash);   color: var(--gold-deep); }
+.pill-in_progress { background: #e6ecf1;            color: #3a5566; }
+.pill-resolved    { background: #e4efe1;            color: var(--teal); }
