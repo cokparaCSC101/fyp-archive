@@ -129,7 +129,7 @@ const approveRequest = async (req, res) => {
       user_id: req.user.user_id,
       action: `approve_${r.action}`,
       project_id: affectedProjectId,
-      details: `request #${r.request_id} by user ${r.requested_by}`,
+      details: r.title || `request #${r.request_id}`,
     });
     return res.json({ message: resultMsg, request_id: r.request_id, status: 'approved' });
   } catch (err) {
@@ -149,7 +149,7 @@ const denyRequest = async (req, res) => {
   try {
     const note = (req.body.review_note || '').slice(0, 500) || null;
     const [rows] = await pool.query(
-      'SELECT status, action, requested_by FROM project_requests WHERE request_id = ?',
+      'SELECT status, action, requested_by, title FROM project_requests WHERE request_id = ?',
       [req.params.id]
     );
     if (rows.length === 0) return res.status(404).json({ message: 'Request not found.' });
@@ -166,7 +166,7 @@ const denyRequest = async (req, res) => {
     await logAudit({
       user_id: req.user.user_id,
       action: `deny_${rows[0].action}`,
-      details: `request #${req.params.id} by user ${rows[0].requested_by}`,
+      details: rows[0].title || `request #${req.params.id}`,
     });
     return res.json({ message: 'Request denied.', request_id: Number(req.params.id), status: 'denied' });
   } catch (err) {
