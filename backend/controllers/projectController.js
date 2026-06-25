@@ -215,9 +215,11 @@ const deleteProject = async (req, res) => {
     const id = req.params.id;
 
     if (canActDirectly(req.user.role)) {
-      const [result] = await pool.query('DELETE FROM projects WHERE project_id = ?', [id]);
-      if (result.affectedRows === 0) return res.status(404).json({ message: 'Project not found.' });
-      await logAudit({ user_id: req.user.user_id, action: 'delete_project', project_id: null, details: `project ${id}` });
+      // Read the title BEFORE deleting so the audit log can show the name.
+      const [existing] = await pool.query('SELECT title FROM projects WHERE project_id = ?', [id]);
+      if (existing.length === 0) return res.status(404).json({ message: 'Project not found.' });
+      await pool.query('DELETE FROM projects WHERE project_id = ?', [id]);
+      await logAudit({ user_id: req.user.user_id, action: 'delete_project', project_id: null, details: existing[0].title });
       return res.json({ message: 'Project deleted successfully.' });
     }
 
