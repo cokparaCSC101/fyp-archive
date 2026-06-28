@@ -68,13 +68,13 @@ export default function Register() {
               />
             </div>
             <div className="field">
-              <label>Email address</label>
+              <label>Gmail address</label>
               <input
                 type="email"
                 name="email"
                 value={form.email}
                 onChange={handleChange}
-                placeholder="you@pau.edu.ng"
+                placeholder="you@gmail.com"
                 autoComplete="email"
                 required
               />
