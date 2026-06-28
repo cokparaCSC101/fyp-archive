@@ -6,19 +6,20 @@
    ===================================================================== */
 
 :root {
-  /* ---- Colour palette ---- */
-  --ink:          #1a1410;   /* near-black warm ink for text          */
-  --ink-soft:     #4a4038;   /* secondary text                        */
-  --ink-faint:    #8a7e72;   /* tertiary / meta text                  */
-  --parchment:    #f5f0e7;   /* warm paper — page background           */
-  --surface:      #fffdf8;   /* cards / raised surfaces               */
-  --surface-edge: #e7ddcd;   /* hairline borders                      */
-  --gold:         #b07d2b;   /* primary accent — scholarly gold       */
-  --gold-deep:    #8a5f1c;   /* hover / pressed accent                */
-  --gold-wash:    #f3e8d4;   /* soft gold tint background             */
-  --teal:         #1f5c54;   /* secondary accent — archival green     */
+  /* ---- Colour palette — PAU Blue (default) ---- */
+  --ink:          #15203c;   /* near-black navy for text              */
+  --ink-soft:     #44506b;   /* secondary text                        */
+  --ink-faint:    #8893ab;   /* tertiary / meta text                  */
+  --parchment:    #eef2f9;   /* cool light — page background           */
+  --surface:      #ffffff;   /* cards / raised surfaces               */
+  --surface-edge: #dde3ef;   /* hairline borders                      */
+  --gold:         #233a8c;   /* primary accent — PAU navy             */
+  --gold-deep:    #182a66;   /* hover / pressed accent                */
+  --gold-wash:    #e6eaf7;   /* soft blue tint background             */
+  --teal:         #1f5c54;   /* secondary accent — success green      */
   --danger:       #a63d2f;   /* destructive actions                   */
   --danger-wash:  #f6e3df;
+  --navbar-bg:    rgba(255, 255, 255, 0.85);
 
   /* ---- Typography ---- */
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
@@ -27,11 +28,31 @@
   /* ---- Shape & depth ---- */
   --radius:    14px;
   --radius-sm: 9px;
+  --shadow-sm: 0 1px 2px rgba(20, 30, 60, 0.07);
+  --shadow:    0 6px 24px -10px rgba(20, 30, 60, 0.22);
+  --shadow-lg: 0 20px 50px -20px rgba(20, 30, 60, 0.32);
+
+  --maxw: 1140px;
+}
+
+/* ---- Classic (warm brown) theme — opt-in via data-theme="classic" ---- */
+:root[data-theme="classic"] {
+  --ink:          #1a1410;
+  --ink-soft:     #4a4038;
+  --ink-faint:    #8a7e72;
+  --parchment:    #f5f0e7;
+  --surface:      #fffdf8;
+  --surface-edge: #e7ddcd;
+  --gold:         #b07d2b;
+  --gold-deep:    #8a5f1c;
+  --gold-wash:    #f3e8d4;
+  --teal:         #1f5c54;
+  --danger:       #a63d2f;
+  --danger-wash:  #f6e3df;
+  --navbar-bg:    rgba(245, 240, 231, 0.82);
   --shadow-sm: 0 1px 2px rgba(26, 20, 16, 0.06);
   --shadow:    0 6px 24px -10px rgba(26, 20, 16, 0.22);
   --shadow-lg: 0 20px 50px -20px rgba(26, 20, 16, 0.35);
-
-  --maxw: 1140px;
 }
 
 /* ---- Reset ---- */
@@ -83,7 +104,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   position: sticky;
   top: 0;
   z-index: 50;
-  background: rgba(245, 240, 231, 0.82);
+  background: var(--navbar-bg);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--surface-edge);
 }
@@ -599,3 +620,17 @@ table.data tbody tr:hover { background: rgba(243, 232, 212, 0.4); }
 .pill-seen        { background: var(--gold-wash);   color: var(--gold-deep); }
 .pill-in_progress { background: #e6ecf1;            color: #3a5566; }
 .pill-resolved    { background: #e4efe1;            color: var(--teal); }
+
+
+/* ---- PAU logo + theme toggle ---- */
+.brand-logo { height: 38px; width: auto; display: block; }
+.theme-toggle {
+  font-size: 0.8rem; font-weight: 600; color: var(--ink-soft);
+  background: var(--gold-wash); border: 1px solid var(--surface-edge);
+  padding: 6px 12px; border-radius: 999px; cursor: pointer;
+  transition: background 0.18s, color 0.18s; white-space: nowrap;
+}
+.theme-toggle:hover { color: var(--ink); }
+
+/* PAU logo on the auth (login) card — blue theme only */
+.auth-card-logo { height: 42px; width: auto; display: block; margin-bottom: 20px; }

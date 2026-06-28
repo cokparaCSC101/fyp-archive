@@ -2,9 +2,11 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Login() {
   const { login } = useAuth();
+  const { theme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -50,6 +52,9 @@ export default function Login() {
 
       <div className="auth-panel">
         <div className="auth-card">
+          {theme === 'blue' && (
+            <img src="/pau-logo.jpg" alt="Pan-Atlantic University" className="auth-card-logo" />
+          )}
           <h2>Welcome back</h2>
           <p className="sub">Sign in to access the project archive.</p>
 
