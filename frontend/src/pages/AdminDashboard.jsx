@@ -11,7 +11,7 @@ import Spinner from '../components/Spinner';
 const ROLE_EYEBROW = { admin: 'Administrator', hod: 'Head of Department', lecturer: 'Lecturer' };
 
 export default function AdminDashboard() {
-  const { role, isLecturer } = useAuth();
+  const { role, isLecturer, canApprove } = useAuth();
   const [projects, setProjects] = useState([]);
   const [supervisors, setSupervisors] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,6 +144,7 @@ export default function AdminDashboard() {
           onClose={() => { setShowForm(false); setEditing(null); }}
           saving={saving}
           pendingMode={isLecturer}
+          allowSimilarityCheck={canApprove}
         />
       )}
 

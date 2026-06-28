@@ -12,11 +12,13 @@ const {
   createProject,
   updateProject,
   deleteProject,
+  checkSimilarity,
 } = require('../controllers/projectController');
-const { verifyToken, requireStaff } = require('../middleware/auth');
+const { verifyToken, requireStaff, requireApprover } = require('../middleware/auth');
 
 router.get('/', verifyToken, getProjects);
 router.get('/:id', verifyToken, getProjectById);
+router.post('/check-similarity', verifyToken, requireApprover, checkSimilarity); // admin/hod
 router.post('/', verifyToken, requireStaff, createProject);
 router.put('/:id', verifyToken, requireStaff, updateProject);
 router.delete('/:id', verifyToken, requireStaff, deleteProject);

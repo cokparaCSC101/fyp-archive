@@ -244,4 +244,27 @@ const deleteProject = async (req, res) => {
   }
 };
 
-module.exports = { getProjects, getProjectById, createProject, updateProject, deleteProject };
+// On-demand similarity check for direct uploaders (admin/HoD) — compares a
+// draft title+abstract against the archive without saving anything.
+const checkSimilarity = async (req, res) => {
+  try {
+    const { title, abstract, project_id } = req.body;
+    if (!title && !abstract) {
+      return res.status(400).json({ message: 'Enter a title and abstract first.' });
+    }
+    let rows;
+    if (project_id) {
+      [rows] = await pool.query('SELECT project_id, title, abstract FROM projects WHERE project_id <> ?', [project_id]);
+    } else {
+      [rows] = await pool.query('SELECT project_id, title, abstract FROM projects');
+    }
+    const sim = compareProject({ title: title || '', abstract: abstract || '' }, rows);
+    return res.json(sim); // { score, matches }
+  } catch (err) {
+    console.error('checkSimilarity error:', err);
+    return res.status(500).json({ message: 'Server error during the similarity check.' });
+  }
+};
+
+module.exports = {
+  checkSimilarity, getProjects, getProjectById, createProject, updateProject, deleteProject };
