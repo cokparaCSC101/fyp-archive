@@ -1,6 +1,7 @@
 // Navbar — shown on all authenticated pages. Links adapt to the user's role.
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 const ROLE_LABELS = {
   admin: 'Administrator',
@@ -11,6 +12,7 @@ const ROLE_LABELS = {
 
 export default function Navbar() {
   const { user, isStaff, canApprove, isLecturer, isAdmin, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -22,7 +24,9 @@ export default function Navbar() {
     <nav className="navbar">
       <div className="container navbar-inner">
         <NavLink to="/" className="brand">
-          <span className="brand-mark">A</span>
+          {theme === 'blue'
+            ? <img src="/pau-logo.jpg" alt="Pan-Atlantic University" className="brand-logo" />
+            : <span className="brand-mark">A</span>}
           <span className="brand-text">
             <span className="brand-title">FYP Archive</span>
             <span className="brand-sub">Pan-Atlantic University</span>
@@ -39,6 +43,9 @@ export default function Navbar() {
           <NavLink to="/feedback" className="nav-link">Feedback</NavLink>
 
           <div className="nav-user">
+            <button className="theme-toggle" onClick={toggleTheme} title="Switch theme">
+              {theme === 'blue' ? 'Classic theme' : 'PAU Blue'}
+            </button>
             <span className="brand-text">
               <span className="nav-user-name">{user?.full_name}</span>
               <span className="nav-user-role">{ROLE_LABELS[user?.role] || user?.role}</span>
