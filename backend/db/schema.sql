@@ -28,7 +28,8 @@ DROP TABLE IF EXISTS supervisors;
 CREATE TABLE supervisors (
   supervisor_id INT AUTO_INCREMENT PRIMARY KEY,
   full_name     VARCHAR(150) NOT NULL,
-  department    VARCHAR(150) NOT NULL DEFAULT 'Computer Science'
+  department    VARCHAR(150) NOT NULL DEFAULT 'Computer Science',
+  user_id       INT NULL UNIQUE
 ) ENGINE=InnoDB;
 
 -- ---------------------------------------------------------------------
@@ -45,6 +46,10 @@ CREATE TABLE users (
   verification_expires DATETIME     NULL,
   created_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
+
+-- Link supervisors to lecturer accounts (added here, once users exists).
+ALTER TABLE supervisors
+  ADD CONSTRAINT fk_sup_user FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE SET NULL;
 
 -- ---------------------------------------------------------------------
 --  PROJECTS  (live/approved entries)

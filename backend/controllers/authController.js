@@ -138,6 +138,18 @@ const verifyEmail = async (req, res) => {
       [row.user_id]
     );
 
+    // Make a verified lecturer selectable as a project supervisor (best-effort).
+    if (row.role === 'lecturer') {
+      try {
+        await pool.query(
+          "INSERT IGNORE INTO supervisors (full_name, department, user_id) VALUES (?, 'Computer Science', ?)",
+          [row.full_name, row.user_id]
+        );
+      } catch (e) {
+        console.error('supervisor sync error:', e.message);
+      }
+    }
+
     const user = publicUser(row);
     const token = signToken(user);
     return res.json({ message: 'Email verified. You are now signed in.', token, user });
